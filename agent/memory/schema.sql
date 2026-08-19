@@ -17,8 +17,11 @@ CREATE TABLE IF NOT EXISTS memories (
     use_count    INTEGER NOT NULL DEFAULT 0
 );
 
+-- HNSW rather than ivfflat: an ivfflat index built on an empty table has no
+-- trained centroids, and index scans against it come back empty until it is
+-- rebuilt. These tables start empty every time, so ivfflat is the wrong tool.
 CREATE INDEX IF NOT EXISTS memories_embedding_idx
-    ON memories USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+    ON memories USING hnsw (embedding vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS memories_kind_idx ON memories (kind);
 CREATE INDEX IF NOT EXISTS memories_run_idx  ON memories (run_id);
 
@@ -44,7 +47,7 @@ CREATE TABLE IF NOT EXISTS chunks (
 );
 
 CREATE INDEX IF NOT EXISTS chunks_embedding_idx
-    ON chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+    ON chunks USING hnsw (embedding vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS chunks_tsv_idx ON chunks USING gin (tsv);
 CREATE INDEX IF NOT EXISTS chunks_document_idx ON chunks (document_id);
 

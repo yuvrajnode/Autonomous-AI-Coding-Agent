@@ -81,6 +81,11 @@ Every store has an in-memory twin implementing the same protocol. They are not
 mocks; they are the fallback path that a fresh clone and CI actually take, which
 is why they are exercised by the same tests.
 
+Vector indexes are HNSW, not ivfflat. An ivfflat index built on an empty table
+has no trained centroids and index scans against it silently return nothing -
+which is a very confusing bug when the rows are visibly in the table. These
+tables are always created empty, so ivfflat was the wrong choice; CI caught it.
+
 The vector column width cannot be a bind parameter, so `schema.sql` is templated
 with the embedding dimension at migration time. Change `ACA_EMBEDDING_DIM` after
 you have indexed something and you will need to re-migrate and re-index. There is
