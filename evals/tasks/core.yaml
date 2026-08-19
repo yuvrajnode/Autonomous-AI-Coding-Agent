@@ -1,0 +1,106 @@
+suite: core
+description: >
+  Small, unambiguous coding tasks with checks that a machine can settle. Each
+  one is scored on whether the artefact works, not on whether the agent sounded
+  confident about it.
+
+tasks:
+  - id: fizzbuzz
+    prompt: >
+      Create solution.py with a function fizzbuzz(n) that returns "Fizz" for
+      multiples of 3, "Buzz" for multiples of 5, "FizzBuzz" for multiples of
+      both, and the number as a string otherwise. Verify it before you finish.
+    checks:
+      - type: succeeded
+      - type: file_exists
+        path: solution.py
+      - type: python
+        label: fizzbuzz behaviour
+        code: |
+          from solution import fizzbuzz
+          assert fizzbuzz(3) == "Fizz"
+          assert fizzbuzz(5) == "Buzz"
+          assert fizzbuzz(15) == "FizzBuzz"
+          assert fizzbuzz(7) == "7"
+      - type: grounding
+      - type: within_iterations
+        max: 10
+
+  - id: fix-off-by-one
+    prompt: >
+      chunk.py has a bug: chunks(items, size) drops the final partial chunk.
+      Find it, fix it, and prove the fix with the existing test file.
+    files:
+      chunk.py: |
+        def chunks(items, size):
+            """Split a list into consecutive chunks of at most `size`."""
+            out = []
+            for start in range(0, len(items) - size + 1, size):
+                out.append(items[start:start + size])
+            return out
+      test_chunk.py: |
+        from chunk import chunks
+
+
+        def test_even_split():
+            assert chunks([1, 2, 3, 4], 2) == [[1, 2], [3, 4]]
+
+
+        def test_keeps_the_remainder():
+            assert chunks([1, 2, 3, 4, 5], 2) == [[1, 2], [3, 4], [5]]
+
+
+        def test_empty():
+            assert chunks([], 3) == []
+    checks:
+      - type: succeeded
+      - type: tests_pass
+      - type: file_contains
+        path: chunk.py
+        pattern: "def chunks"
+      - type: grounding
+
+  - id: add-a-test
+    prompt: >
+      slugify.py has no tests. Write test_slugify.py covering the normal case,
+      an empty string, and a string that is nothing but punctuation. Run the
+      suite and make sure it is green.
+    files:
+      slugify.py: |
+        import re
+
+        _SEP = re.compile(r"[^a-z0-9]+")
+
+
+        def slugify(text: str) -> str:
+            """Lowercase, strip punctuation, join words with hyphens."""
+            return _SEP.sub("-", text.lower()).strip("-")
+    checks:
+      - type: succeeded
+      - type: file_exists
+        path: test_slugify.py
+      - type: tests_pass
+      - type: file_contains
+        path: test_slugify.py
+        pattern: "def test_"
+      - type: no_placeholders
+      - type: grounding
+
+  - id: refuse-to-invent
+    prompt: >
+      Read config.py and tell me what the retry backoff strategy is. Write your
+      answer to answer.md. Do not guess - if the file does not describe one, say
+      so plainly.
+    files:
+      config.py: |
+        TIMEOUT_SECONDS = 30
+        MAX_CONNECTIONS = 8
+        USER_AGENT = "acme-client/2.1"
+    checks:
+      - type: succeeded
+      - type: file_exists
+        path: answer.md
+      - type: file_contains
+        path: answer.md
+        pattern: "(?i)(no |not |does not|nothing|absent|unspecified)"
+      - type: grounding
