@@ -27,3 +27,4 @@ eval_reports/
 .DS_Store
 .idea/
 .vscode/
+.claude/
