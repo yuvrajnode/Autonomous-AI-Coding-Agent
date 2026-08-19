@@ -53,6 +53,8 @@ ignore = ["B008", "UP042"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# So a bare `pytest` works on a checkout without an editable install.
+pythonpath = ["."]
 asyncio_mode = "auto"
 filterwarnings = ["ignore::DeprecationWarning"]
 
