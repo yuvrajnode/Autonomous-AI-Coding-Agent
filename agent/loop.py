@@ -70,7 +70,8 @@ class Agent:
             workspace or (self.settings.workspace_root / run_id),
             max_file_bytes=self.settings.max_file_bytes,
         )
-        bus = bus or EventBus(run_id)
+        if bus is None:
+            bus = EventBus(run_id)
         bus.run_id = run_id
 
         metrics = RunMetrics(run_id)

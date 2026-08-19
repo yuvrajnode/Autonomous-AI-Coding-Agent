@@ -93,6 +93,11 @@ class EventBus:
     def __len__(self) -> int:
         return len(self._history)
 
+    def __bool__(self) -> bool:
+        # Without this, an empty bus is falsy and `bus or EventBus()` quietly
+        # throws away the caller's bus. That cost an afternoon once.
+        return True
+
 
 def _safe_call(fn: Subscriber, event: Event) -> None:
     try:
