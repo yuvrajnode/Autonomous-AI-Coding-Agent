@@ -47,7 +47,9 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["B008"]
+# B008: FastAPI and typer both rely on calls in argument defaults.
+# UP042: str+Enum stays - StrEnum changes how values render in trace files.
+ignore = ["B008", "UP042"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

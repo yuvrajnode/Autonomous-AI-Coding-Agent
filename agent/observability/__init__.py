@@ -1,6 +1,6 @@
 from agent.observability.events import Event, EventBus, EventType
 from agent.observability.metrics import MetricsRegistry, RunMetrics, registry
-from agent.observability.tracing import TraceWriter, Tracer, read_trace
+from agent.observability.tracing import Tracer, TraceWriter, read_trace
 
 __all__ = [
     "Event",

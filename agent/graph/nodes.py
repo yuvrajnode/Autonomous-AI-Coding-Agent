@@ -21,6 +21,7 @@ from typing import Any
 
 from agent import prompts
 from agent.config import Settings
+from agent.graph.state import AgentState, merge_usage, note
 from agent.llm.base import LLMClient, LLMResponse, Message
 from agent.memory.store import MemoryStore
 from agent.observability.events import EventBus, EventType
@@ -37,8 +38,6 @@ from agent.types import (
     Verdict,
 )
 from agent.utils import fingerprint, parse_json_object, truncate
-
-from agent.graph.state import AgentState, merge_usage, note
 
 log = logging.getLogger(__name__)
 

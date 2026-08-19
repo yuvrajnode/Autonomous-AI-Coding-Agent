@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 
@@ -156,10 +156,8 @@ async def stream_run(websocket: WebSocket, run_id: str) -> None:
 
 
 async def _close_quietly(websocket: WebSocket) -> None:
-    try:
+    with suppress(RuntimeError):
         await websocket.close()
-    except RuntimeError:
-        pass
 
 
 # -- memory -----------------------------------------------------------------

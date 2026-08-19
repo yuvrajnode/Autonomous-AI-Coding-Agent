@@ -22,7 +22,7 @@ ALLOWED_EXECUTABLES = {
     "python", "python3", "pytest", "ruff", "mypy", "black",
     "node", "npm", "npx", "pnpm", "yarn",
     "git", "make",
-    "ls", "cat", "head", "tail", "wc", "sort", "uniq", "diff", "grep", "find",
+    "ls", "cat", "head", "tail", "wc", "sort", "uniq", "diff", "grep", "find", "echo",
 }
 
 # Sub-commands that mutate history, publish, or reach the network.

@@ -15,9 +15,10 @@ import logging
 import threading
 import time
 from collections import OrderedDict
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from agent.loop import Agent
 from agent.observability.events import EventBus
