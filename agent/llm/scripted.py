@@ -104,6 +104,18 @@ def _demo_responder() -> Responder:
             }
             return LLMResponse(text=json.dumps(body), usage=usage)
 
+        if role == "summariser":
+            return LLMResponse(
+                text=(
+                    "Created solution.py with a fizzbuzz(n) helper covering the three "
+                    "divisibility cases, then executed it with run_python: fizzbuzz(15) "
+                    "printed FizzBuzz and the process exited 0. Nothing else in the "
+                    "workspace was touched. No test file was added, so this is verified "
+                    "by execution rather than by a suite."
+                ),
+                usage=usage,
+            )
+
         # actor
         script: list[ToolCall] = [
             ToolCall(name="list_dir", arguments={"path": "."}),
@@ -123,6 +135,14 @@ def _demo_responder() -> Responder:
             ToolCall(
                 name="run_python",
                 arguments={"code": "from solution import fizzbuzz; print(fizzbuzz(15))"},
+            ),
+            ToolCall(
+                name="submit_result",
+                arguments={
+                    "summary": "fizzbuzz(15) printed FizzBuzz, exit code 0.",
+                    "artifacts": ["solution.py"],
+                    "confidence": 0.9,
+                },
             ),
         ]
         if n < len(script):
