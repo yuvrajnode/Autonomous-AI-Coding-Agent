@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: aca-postgres
+    environment:
+      POSTGRES_USER: aca
+      POSTGRES_PASSWORD: aca
+      POSTGRES_DB: aca
+    ports:
+      - "5433:5432"
+    volumes:
+      - aca-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aca -d aca"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  aca-pgdata:
