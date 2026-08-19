@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>aca · autonomous coding agent</title>
+<meta name="description" content="Console for an autonomous coding agent: plan, act, observe." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/static/css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234F46E5'/><path d='M9 21l4-11h2l4 11h-2.2l-.9-2.6h-3.8L11.2 21H9zm3.7-4.4h2.6L14 12.8l-1.3 3.8z' fill='white'/></svg>" />
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="shell">
+  <!-- ------------------------------------------------------------- rail -->
+  <aside class="rail">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">a</span>
+      <span class="brand-text">
+        <strong>aca</strong>
+        <small>coding agent</small>
+      </span>
+    </div>
+
+    <nav aria-label="Sections">
+      <button class="nav-item is-active" data-view="runs" type="button">
+        <span class="nav-dot" aria-hidden="true"></span> Runs
+      </button>
+      <button class="nav-item" data-view="memory" type="button">
+        <span class="nav-dot" aria-hidden="true"></span> Memory
+      </button>
+      <button class="nav-item" data-view="knowledge" type="button">
+        <span class="nav-dot" aria-hidden="true"></span> Knowledge
+      </button>
+      <button class="nav-item" data-view="tools" type="button">
+        <span class="nav-dot" aria-hidden="true"></span> Tools
+      </button>
+    </nav>
+
+    <div class="rail-foot">
+      <button class="ghost-btn" id="theme-toggle" type="button" aria-pressed="true">
+        Theme
+      </button>
+      <dl class="health" id="health" aria-live="polite">
+        <div><dt>model</dt><dd>–</dd></div>
+        <div><dt>memory</dt><dd>–</dd></div>
+        <div><dt>index</dt><dd>–</dd></div>
+      </dl>
+    </div>
+  </aside>
+
+  <!-- ------------------------------------------------------------- main -->
+  <main id="main">
+    <!-- ================================================ runs view -->
+    <section class="view is-active" data-view="runs">
+      <header class="page-head">
+        <div>
+          <h1>Runs</h1>
+          <p class="sub">Give the agent a task. It plans, acts, and checks its own work.</p>
+        </div>
+        <div class="stat-strip" id="rollup"></div>
+      </header>
+
+      <form class="composer" id="composer">
+        <label class="field">
+          <span class="field-label">Task</span>
+          <textarea id="task" name="task" rows="2" required minlength="8"
+            placeholder="Add a retry with exponential backoff to the HTTP client and cover it with a test"></textarea>
+        </label>
+        <label class="field field-narrow">
+          <span class="field-label">Workspace <span class="hint">optional</span></span>
+          <input id="workspace" name="workspace" type="text" placeholder="./workspaces/scratch" />
+        </label>
+        <button class="primary-btn" type="submit" id="run-btn">
+          <span class="btn-label">Start run</span>
+        </button>
+      </form>
+      <p class="form-error" id="composer-error" role="alert" hidden></p>
+
+      <div class="run-layout">
+        <!-- history -->
+        <section class="panel panel-history" aria-labelledby="h-history">
+          <h2 id="h-history" class="panel-title">History</h2>
+          <ul class="run-list" id="run-list"></ul>
+        </section>
+
+        <!-- live run -->
+        <section class="panel panel-live" aria-labelledby="h-live">
+          <div class="panel-head">
+            <h2 id="h-live" class="panel-title">Timeline</h2>
+            <span class="badge" id="run-status" data-status="idle">idle</span>
+          </div>
+          <ol class="timeline" id="timeline" aria-live="polite" aria-relevant="additions"></ol>
+        </section>
+
+        <!-- plan + metrics -->
+        <section class="panel panel-side">
+          <div class="panel-head">
+            <h2 class="panel-title">Plan</h2>
+            <span class="muted small" id="plan-progress"></span>
+          </div>
+          <ol class="plan" id="plan"></ol>
+
+          <h2 class="panel-title mt">This run</h2>
+          <dl class="kv" id="run-metrics"></dl>
+
+          <h2 class="panel-title mt">Result</h2>
+          <p class="result-text" id="run-summary">Nothing yet.</p>
+        </section>
+      </div>
+    </section>
+
+    <!-- ================================================ memory view -->
+    <section class="view" data-view="memory">
+      <header class="page-head">
+        <div>
+          <h1>Memory</h1>
+          <p class="sub">What the agent decided was worth carrying into the next run.</p>
+        </div>
+        <div class="stat-strip" id="memory-stats"></div>
+      </header>
+
+      <form class="inline-form" id="memory-search">
+        <label class="field">
+          <span class="field-label">Search memory</span>
+          <input type="search" id="memory-q" placeholder="build command, flaky test, layout…" />
+        </label>
+        <button class="ghost-btn" type="submit">Search</button>
+      </form>
+
+      <form class="inline-form" id="memory-add">
+        <label class="field">
+          <span class="field-label">Add a memory by hand</span>
+          <input type="text" id="memory-text" minlength="8"
+            placeholder="The integration suite needs POSTGRES_URL set before it will collect" />
+        </label>
+        <label class="field field-tiny">
+          <span class="field-label">Kind</span>
+          <select id="memory-kind">
+            <option value="fact">fact</option>
+            <option value="lesson">lesson</option>
+            <option value="preference">preference</option>
+            <option value="failure">failure</option>
+          </select>
+        </label>
+        <button class="primary-btn" type="submit">Save</button>
+      </form>
+
+      <div class="panel">
+        <ul class="memory-list" id="memory-list"></ul>
+      </div>
+    </section>
+
+    <!-- ================================================ knowledge view -->
+    <section class="view" data-view="knowledge">
+      <header class="page-head">
+        <div>
+          <h1>Knowledge</h1>
+          <p class="sub">The retrieval index. Chunks come back with the file and lines they came from.</p>
+        </div>
+        <div class="stat-strip" id="knowledge-stats"></div>
+      </header>
+
+      <form class="inline-form" id="index-form">
+        <label class="field">
+          <span class="field-label">Index a directory</span>
+          <input type="text" id="index-path" placeholder="/path/to/a/repo" required />
+        </label>
+        <button class="primary-btn" type="submit">Index</button>
+      </form>
+
+      <form class="inline-form" id="knowledge-search">
+        <label class="field">
+          <span class="field-label">Query the index</span>
+          <input type="search" id="knowledge-q" placeholder="how does the retry backoff work?" />
+        </label>
+        <button class="ghost-btn" type="submit">Search</button>
+      </form>
+
+      <div class="two-col">
+        <section class="panel">
+          <h2 class="panel-title">Documents</h2>
+          <ul class="doc-list" id="doc-list"></ul>
+        </section>
+        <section class="panel">
+          <h2 class="panel-title">Results</h2>
+          <div id="chunk-list" class="chunk-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ================================================ tools view -->
+    <section class="view" data-view="tools">
+      <header class="page-head">
+        <div>
+          <h1>Tools</h1>
+          <p class="sub">Exactly what the model is offered. Nothing else is reachable from the loop.</p>
+        </div>
+      </header>
+      <div class="tool-grid" id="tool-grid"></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/static/js/app.js" type="module"></script>
+</body>
+</html>
