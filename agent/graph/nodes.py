@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from agent import prompts
 from agent.config import Settings
@@ -35,6 +35,7 @@ from agent.types import (
     StepStatus,
     ToolCall,
     ToolResult,
+    Usage,
     Verdict,
 )
 from agent.utils import fingerprint, parse_json_object, truncate
@@ -200,7 +201,7 @@ class Nodes:
         )
 
         if not response.wants_tools:
-            return {**updates, **self._handle_no_tool_call(state, response)}
+            return cast(AgentState, {**updates, **self._handle_no_tool_call(state, response)})
 
         messages = [*state["messages"], Message.assistant(_assistant_content(response))]
         seen = dict(state.get("seen_calls", {}))
@@ -356,6 +357,7 @@ class Nodes:
         )
         submitted = self.d.ctx.scratch.get("submitted") or {}
         summary = state.get("summary", "")
+        usage = state.get("usage") or Usage()
 
         if not summary:
             response = self._call(
@@ -366,20 +368,20 @@ class Nodes:
                 label="summarise",
             )
             summary = response.text.strip() or submitted.get("summary", "")
-            state = {**state, "usage": merge_usage(state, response.usage)}
+            usage = merge_usage(state, response.usage)
 
         self.d.bus.emit(
             EventType.RUN_FINISHED,
             status=status.value,
             summary=summary,
             iterations=state.get("iterations", 0),
-            usd=state.get("usage").usd if state.get("usage") else 0.0,
+            usd=usage.usd,
         )
         return AgentState(
             summary=summary,
             status=status,
             finished=True,
-            usage=state.get("usage"),
+            usage=usage,
             artifacts=state.get("artifacts", []) or list(submitted.get("artifacts", [])),
         )
 

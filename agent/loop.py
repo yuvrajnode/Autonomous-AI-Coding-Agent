@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from agent.config import Settings, get_settings
 from agent.graph.builder import build_graph
@@ -150,7 +150,7 @@ class Agent:
     def _to_result(
         self, run_id: str, task: str, final: dict[str, Any], started: float
     ) -> RunResult:
-        state: AgentState = final  # LangGraph returns the merged state dict
+        state = cast(AgentState, final)  # LangGraph returns the merged state dict
         return RunResult(
             run_id=run_id,
             task=task,
