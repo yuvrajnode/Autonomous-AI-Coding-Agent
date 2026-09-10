@@ -1,3 +1,4 @@
+PYTHON ?= python3
 VENV ?= .venv
 PY   := $(VENV)/bin/python
 PIP  := $(VENV)/bin/pip
@@ -5,7 +6,7 @@ PIP  := $(VENV)/bin/pip
 .PHONY: install db-up db-down migrate run serve eval test lint fmt clean
 
 install:
-	python3 -m venv $(VENV)
+	$(PYTHON) -m venv $(VENV)
 	$(PIP) install -q -U pip
 	$(PIP) install -q -r requirements-dev.txt
 	$(PIP) install -q -e .
