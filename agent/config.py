@@ -21,9 +21,14 @@ class Settings(BaseSettings):
 
     # --- LLM ---------------------------------------------------------------
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
-    model: str = "claude-sonnet-5"
-    planner_model: str = "claude-opus-5"
-    max_tokens: int = 4096
+    model: str = "claude-sonnet-5-5"
+    planner_model: str = "claude-opus-5-5"
+    # Thinking is always on and counts toward this, so leave room past the reply.
+    # Requests are not streamed; much higher and the SDK refuses on timeout grounds.
+    max_tokens: int = 16000
+    # The only control over how much the model thinks. Set it explicitly: the API
+    # default differs by model (medium on Opus 5.5, high on Sonnet 5.5).
+    effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
     llm_max_retries: int = 4
 
     # --- Embeddings --------------------------------------------------------

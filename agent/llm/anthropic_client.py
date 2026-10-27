@@ -9,8 +9,13 @@ Two things worth knowing:
   we built a bad request and retrying just burns time. The SDK's own retries are
   switched off so the two loops do not multiply.
 * No sampling parameters. Current models and SDKs reject `temperature` outright.
-* Thinking blocks are kept in `raw_content` and replayed verbatim; the API needs
-  them back on the assistant turn that carried the tool call.
+* Thinking is always on; `effort` is the only dial. Thinking blocks are kept in
+  `raw_content` and replayed verbatim, which only works because the actor's
+  system prompt, tools and history never change mid-run - keep it append-only.
+* Safety classifiers can decline a request (HTTP 200, `stop_reason: "refusal"`).
+  Models that support it get server-side fallbacks, so a false positive is
+  retried on another model instead of ending the run; a refusal that survives
+  that raises.
 """
 
 from __future__ import annotations
@@ -30,6 +35,10 @@ log = logging.getLogger(__name__)
 
 # 529 is the API's `overloaded_error`.
 RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
+
+# Models that accept `fallbacks: "default"`; anything else would 400 on it.
+FALLBACK_MODELS = {"claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5", "claude-fable-5-1"}
+FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 
 class AnthropicClient:
@@ -57,6 +66,7 @@ class AnthropicClient:
         payload: dict[str, Any] = {
             "model": model,
             "max_tokens": max_tokens or self.settings.max_tokens,
+            "output_config": {"effort": self.settings.effort},
             "system": [
                 {"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}
             ],
@@ -66,6 +76,9 @@ class AnthropicClient:
             cached = [dict(t) for t in tools]
             cached[-1]["cache_control"] = {"type": "ephemeral"}
             payload["tools"] = cached
+        if model in FALLBACK_MODELS:
+            payload["betas"] = [FALLBACK_BETA]
+            payload["fallbacks"] = "default"
 
         raw = self._send(payload)
         return self._parse(raw, model)
@@ -76,7 +89,7 @@ class AnthropicClient:
         last: Exception | None = None
         for attempt in range(self.settings.llm_max_retries):
             try:
-                return self._client.messages.create(**payload)
+                return self._client.beta.messages.create(**payload)
             except Exception as exc:  # noqa: BLE001 - provider SDK error surface varies
                 last = exc
                 if not _is_retryable(exc):
@@ -95,6 +108,10 @@ class AnthropicClient:
     # -- parsing ------------------------------------------------------------
 
     def _parse(self, raw: Any, model: str) -> LLMResponse:
+        if getattr(raw, "stop_reason", None) == "refusal":
+            category = getattr(getattr(raw, "stop_details", None), "category", None)
+            raise LLMError(f"{model} declined the request (refusal, category: {category})")
+
         text_parts: list[str] = []
         tool_calls: list[ToolCall] = []
         raw_content: list[dict[str, Any]] = []
@@ -123,7 +140,8 @@ class AnthropicClient:
             elif kind == "redacted_thinking":
                 raw_content.append({"type": "redacted_thinking", "data": block.data})
 
-        usage = _usage_from(raw, model)
+        # After a fallback the reply came from another model; bill at its rate.
+        usage = _usage_from(raw, getattr(raw, "model", None) or model)
         return LLMResponse(
             text="\n".join(text_parts).strip(),
             tool_calls=tool_calls,

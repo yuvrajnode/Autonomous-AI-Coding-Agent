@@ -293,8 +293,10 @@ passed down explicitly. Tests build one directly and never touch `os.environ`.
 | variable | default | what it does |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | – | unset means the scripted client, not a crash |
-| `ACA_MODEL` | `claude-sonnet-5` | the acting and observing model |
-| `ACA_PLANNER_MODEL` | `claude-opus-5` | planning and replanning |
+| `ACA_MODEL` | `claude-sonnet-5-5` | the acting and observing model |
+| `ACA_PLANNER_MODEL` | `claude-opus-5-5` | planning and replanning |
+| `ACA_MAX_TOKENS` | `16000` | per response, thinking included |
+| `ACA_EFFORT` | `medium` | how hard the model thinks: `low` to `max` |
 | `ACA_DATABASE_URL` | `postgresql://aca:aca@localhost:5433/aca` | memory + index |
 | `ACA_EMBEDDING_PROVIDER` | `voyage` | or `hashing` for offline |
 | `ACA_MAX_ITERATIONS` | `24` | hard ceiling on act/observe turns |

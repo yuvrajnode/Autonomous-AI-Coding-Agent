@@ -22,7 +22,7 @@ PRICES: dict[str, tuple[float, float, float]] = {
     "claude-haiku-4-5": (1.00, 5.00, 0.10),
 }
 
-_FALLBACK = PRICES["claude-sonnet-5"]
+_FALLBACK = PRICES["claude-sonnet-5-5"]
 
 
 def _rates(model: str) -> tuple[float, float, float]:
