@@ -6,7 +6,11 @@ Two things worth knowing:
   are identical on every turn of a run, so the cache read is close to free and
   cuts the input bill on long loops by roughly an order of magnitude.
 * Retries only cover the transient failures (429, 5xx, overloaded). A 400 means
-  we built a bad request and retrying just burns time.
+  we built a bad request and retrying just burns time. The SDK's own retries are
+  switched off so the two loops do not multiply.
+* No sampling parameters. Current models and SDKs reject `temperature` outright.
+* Thinking blocks are kept in `raw_content` and replayed verbatim; the API needs
+  them back on the assistant turn that carried the tool call.
 """
 
 from __future__ import annotations
@@ -24,7 +28,8 @@ from agent.types import ToolCall, Usage
 
 log = logging.getLogger(__name__)
 
-RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504}
+# 529 is the API's `overloaded_error`.
+RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
 
 
 class AnthropicClient:
@@ -35,7 +40,9 @@ class AnthropicClient:
         else:
             import anthropic
 
-            self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+            self._client = anthropic.Anthropic(
+                api_key=settings.anthropic_api_key, max_retries=0
+            )
 
     def complete(
         self,
@@ -45,15 +52,11 @@ class AnthropicClient:
         tools: list[dict[str, Any]] | None = None,
         model: str | None = None,
         max_tokens: int | None = None,
-        temperature: float | None = None,
     ) -> LLMResponse:
         model = model or self.settings.model
         payload: dict[str, Any] = {
             "model": model,
             "max_tokens": max_tokens or self.settings.max_tokens,
-            "temperature": (
-                self.settings.temperature if temperature is None else temperature
-            ),
             "system": [
                 {"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}
             ],
@@ -113,6 +116,12 @@ class AnthropicClient:
                         "input": dict(block.input or {}),
                     }
                 )
+            elif kind == "thinking":
+                raw_content.append(
+                    {"type": "thinking", "thinking": block.thinking, "signature": block.signature}
+                )
+            elif kind == "redacted_thinking":
+                raw_content.append({"type": "redacted_thinking", "data": block.data})
 
         usage = _usage_from(raw, model)
         return LLMResponse(

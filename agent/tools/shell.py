@@ -26,7 +26,12 @@ ALLOWED_EXECUTABLES = {
 }
 
 # Sub-commands that mutate history, publish, or reach the network.
-BLOCKED_GIT = {"push", "remote", "clone", "fetch", "pull", "config", "clean"}
+BLOCKED_GIT = {
+    "push", "remote", "clone", "fetch", "pull", "config", "clean", "ls-remote", "submodule",
+}
+# Global options that point git at another repo or inject config; any of them
+# could smuggle a blocked sub-command past the check, so they are refused.
+BLOCKED_GIT_OPTIONS = ("-c", "-C", "--git-dir", "--work-tree", "--exec-path", "--config-env")
 
 MAX_OUTPUT = 12_000
 
@@ -99,9 +104,19 @@ def _parse(command: str) -> list[str]:
         raise ToolError(
             f"{exe!r} is not on the allowlist. Permitted: {', '.join(sorted(ALLOWED_EXECUTABLES))}"
         )
-    if exe == "git" and len(argv) > 1 and argv[1] in BLOCKED_GIT:
-        raise ToolError(f"`git {argv[1]}` is blocked inside the sandbox")
+    if exe == "git":
+        _check_git(argv[1:])
     return argv
+
+
+def _check_git(args: list[str]) -> None:
+    for arg in args:
+        if not arg.startswith("-"):
+            if arg in BLOCKED_GIT:
+                raise ToolError(f"`git {arg}` is blocked inside the sandbox")
+            return
+        if arg.startswith(BLOCKED_GIT_OPTIONS):
+            raise ToolError(f"git option {arg!r} is blocked inside the sandbox")
 
 
 def _execute(argv: list[str], ctx: ToolContext, timeout: int, label: str) -> str:

@@ -38,7 +38,6 @@ class ScriptedClient:
         tools: list[dict[str, Any]] | None = None,
         model: str | None = None,
         max_tokens: int | None = None,
-        temperature: float | None = None,
     ) -> LLMResponse:
         self.calls.append({"system": system, "messages": messages, "tools": tools})
         if self.queue:

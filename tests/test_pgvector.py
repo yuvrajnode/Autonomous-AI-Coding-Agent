@@ -10,6 +10,8 @@ the thing that ships.
 
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from agent.memory import db
@@ -21,7 +23,7 @@ from agent.rag.retriever import Retriever
 from agent.rag.store import PgChunkStore, checksum
 
 DIM = 256
-URL = "postgresql://aca:aca@localhost:5433/aca"
+URL = os.environ.get("ACA_DATABASE_URL", "postgresql://aca:aca@localhost:5433/aca")
 
 pytestmark = pytest.mark.skipif(
     not db.is_available(URL), reason="postgres is not running (make db-up)"

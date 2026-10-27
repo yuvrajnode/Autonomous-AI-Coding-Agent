@@ -136,6 +136,21 @@ def test_shell_blocks_dangerous_git_subcommands(ctx):
     assert "blocked" in result.error
 
 
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git -C . push origin main",
+        "git -c core.sshCommand=evil fetch",
+        "git --git-dir=/tmp/other.git log",
+        "git --no-pager pull",
+    ],
+)
+def test_shell_blocks_git_options_that_hide_the_subcommand(ctx, command):
+    result = registry.invoke(call("run_command", command=command), ctx)
+    assert result.ok is False
+    assert "blocked" in result.error
+
+
 def test_run_python_executes_against_the_workspace(ctx):
     ctx.workspace.write("solution.py", "def double(n):\n    return n * 2\n")
     result = registry.invoke(

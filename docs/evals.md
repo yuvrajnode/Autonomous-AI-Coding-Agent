@@ -21,8 +21,10 @@ Workspaces are kept after the run. When a task fails, that directory is the
 fastest way to see what the agent actually produced.
 
 `--scripted` swaps in a canned client. It exercises the graders, the report and
-the workspace seeding; it says nothing about model quality. A green scripted run
-means the harness works.
+the workspace seeding; it says nothing about model quality. The canned client
+only knows how to do `fizzbuzz`, so the expected result is 1/4 with the other
+three failing on their checks - which is the point: it proves the graders catch
+a run that did not do the work. The exit code is non-zero for the same reason.
 
 ## Writing a task
 

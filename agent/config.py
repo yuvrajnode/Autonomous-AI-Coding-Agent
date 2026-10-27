@@ -10,7 +10,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,7 +24,6 @@ class Settings(BaseSettings):
     model: str = "claude-sonnet-5"
     planner_model: str = "claude-opus-5"
     max_tokens: int = 4096
-    temperature: float = 0.0
     llm_max_retries: int = 4
 
     # --- Embeddings --------------------------------------------------------
@@ -56,13 +55,6 @@ class Settings(BaseSettings):
     # --- Observability -----------------------------------------------------
     trace_dir: Path = Path("./traces")
     log_level: str = "INFO"
-
-    @field_validator("temperature")
-    @classmethod
-    def _sane_temperature(cls, v: float) -> float:
-        if not 0.0 <= v <= 1.0:
-            raise ValueError("temperature must be between 0 and 1")
-        return v
 
     @property
     def has_llm_credentials(self) -> bool:

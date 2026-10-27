@@ -265,8 +265,8 @@ hallucinating, and unlike a quality score, that is cheap to detect and impossibl
 to argue with.
 
 Reports land in `eval_reports/` as JSON and markdown. The markdown is shaped like
-this — run the suite yourself for real numbers, they depend on the model, the
-temperature, and the day:
+this — run the suite yourself for real numbers, they depend on the model and
+the day:
 
 ```
 | task             | result | steps | time | failing checks |
@@ -278,8 +278,9 @@ temperature, and the day:
 ```
 
 `--scripted` runs the harness against a canned client. It exercises the graders
-and the report, not the model — a green scripted run says the plumbing works, not
-that the agent is good. More detail in [docs/evals.md](docs/evals.md).
+and the report, not the model. The canned client only solves `fizzbuzz`, so 1/4
+is the expected result — the other three failing shows the graders catch a run
+that did not do the work. More detail in [docs/evals.md](docs/evals.md).
 
 ---
 
