@@ -100,17 +100,27 @@ function applyTheme(theme) {
 const loaders = {};
 
 function initNav() {
+  // The hash is the source of truth, so back/forward and pasted links work too.
   $$(".nav-item").forEach((button) => {
-    button.addEventListener("click", () => show(button.dataset.view));
+    button.addEventListener("click", () => {
+      const view = button.dataset.view;
+      if (location.hash === `#${view}`) show(view);
+      else location.hash = view;
+    });
   });
-  const initial = location.hash.replace("#", "") || "runs";
-  show(loaders[initial] ? initial : "runs");
+  window.addEventListener("hashchange", () => {
+    const view = location.hash.replace("#", "");
+    if (loaders[view]) show(view);
+  });
+  const requested = location.hash.replace("#", "");
+  const initial = loaders[requested] ? requested : "runs";
+  history.replaceState(null, "", `#${initial}`);
+  show(initial);
 }
 
 function show(view) {
   $$(".nav-item").forEach((b) => b.classList.toggle("is-active", b.dataset.view === view));
   $$(".view").forEach((s) => s.classList.toggle("is-active", s.dataset.view === view));
-  location.hash = view;
   loaders[view]?.();
 }
 

@@ -7,11 +7,14 @@ never touches the loop.
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
 from agent.types import ToolCall, Usage
+
+log = logging.getLogger(__name__)
 
 
 class Message(BaseModel):
@@ -74,4 +77,10 @@ def build_client(settings: Any | None = None) -> LLMClient:
 
     from agent.llm.scripted import ScriptedClient
 
+    # Loud on purpose: the demo script writes fizzbuzz whatever the task says, and
+    # a "succeeded" run that ignored the task is worse than a crash.
+    log.warning(
+        "ANTHROPIC_API_KEY is not set - using the scripted demo client, which ignores "
+        "the task and replays a canned fizzbuzz run"
+    )
     return ScriptedClient.demo()

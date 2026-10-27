@@ -43,6 +43,13 @@ def test_the_dashboard_is_served(client):
     assert "aca" in response.text
 
 
+@pytest.mark.parametrize("path", ["/", "/static/js/app.js", "/static/css/app.css"])
+def test_dashboard_files_are_revalidated_so_upgrades_are_not_stale(client, path):
+    response = client.get(path)
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-cache"
+
+
 def test_tools_are_listed_with_their_parameters(client):
     tools = client.get("/api/tools").json()["tools"]
     names = {t["name"] for t in tools}

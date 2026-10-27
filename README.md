@@ -127,6 +127,10 @@ aca index ~/code/some-project        # optional: give it something to cite
 aca run "Fix the failing test in tests/test_parser.py" --workspace ~/code/some-project
 ```
 
+If something else already holds `:5433`, pick another port for both sides:
+`ACA_PG_PORT=55433` in `.env` (docker compose reads it) and
+`ACA_DATABASE_URL=postgresql://aca:aca@localhost:55433/aca`.
+
 Without Postgres running, memory and the index fall back to in-memory
 implementations and the agent tells you so on startup. Nothing breaks; nothing
 survives the process either.

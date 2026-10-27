@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -20,6 +21,7 @@ from rich.table import Table
 
 from agent import __version__
 from agent.config import get_settings
+from agent.errors import StoreError
 from agent.observability.events import Event, EventBus, EventType
 from agent.observability.tracing import read_trace
 from agent.types import RunStatus
@@ -225,7 +227,8 @@ def memory_list(limit: int = typer.Option(20, "-n")) -> None:
 
     table = Table("kind", "text", "written", box=None)
     for record in build_memory_store().recent(limit):
-        table.add_row(record.kind, record.text[:100], f"{record.created_at:.0f}")
+        written = datetime.fromtimestamp(record.created_at).strftime("%Y-%m-%d %H:%M")
+        table.add_row(record.kind, record.text[:100], written)
     console.print(table)
 
 
@@ -274,7 +277,11 @@ def migrate() -> None:
     from agent.memory import db
 
     settings = get_settings()
-    applied = db.migrate(settings.database_url, settings.embedding_dim)
+    try:
+        applied = db.migrate(settings.database_url, settings.embedding_dim)
+    except StoreError as exc:
+        console.print(f"[red]{exc}[/]\nIs postgres up? `make db-up`, then check ACA_DATABASE_URL.")
+        raise typer.Exit(1) from None
     console.print(f"applied [green]{len(applied)}[/] statement(s)")
 
 

@@ -30,6 +30,16 @@ from server.runs import RunManager
 log = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
+# Revalidate on every load (a cheap 304 when unchanged) so an upgrade is picked
+# up at once instead of the browser running a stale app.js against a new API.
+NO_CACHE = {"Cache-Control": "no-cache"}
+
+
+class _RevalidatedStaticFiles(StaticFiles):
+    def file_response(self, *args: Any, **kwargs: Any) -> Any:
+        response = super().file_response(*args, **kwargs)
+        response.headers.update(NO_CACHE)
+        return response
 
 
 class StartRunRequest(BaseModel):
@@ -95,7 +105,7 @@ app = FastAPI(title="aca", version=__version__, lifespan=lifespan)
 
 @app.get("/", include_in_schema=False)
 async def index() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE)
 
 
 # -- runs -------------------------------------------------------------------
@@ -256,4 +266,4 @@ async def health() -> JSONResponse:
     )
 
 
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/static", _RevalidatedStaticFiles(directory=STATIC_DIR), name="static")
