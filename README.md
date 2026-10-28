@@ -365,7 +365,3 @@ so they run for real there.
   loop, nowhere near enough to claim a benchmark result.
 - **Chunking is boundary-aware, not language-aware.** Real tree-sitter parsing
   would beat the regex heuristics, especially on languages other than Python.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
